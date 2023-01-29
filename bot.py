@@ -7,6 +7,7 @@ import data.config as cfg
 
 token = cfg.token
 allowed_users = cfg.allowed_users
+watched_users = cfg.watched_users
 announcements = cfg.announcements
 
 intents = discord.Intents().all()
@@ -48,7 +49,7 @@ async def members(ctx):
 
 @client.event
 async def on_voice_state_update(member, before, after):
-    if member.id in  allowed_users and before.channel != after.channel: 
+    if member.id in  watched_users and before.channel != after.channel: 
         channel = after.channel
         if not channel:
             return
