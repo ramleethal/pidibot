@@ -9,6 +9,7 @@ token = cfg.token
 allowed_users = cfg.allowed_users
 watched_users = cfg.watched_users
 announcements = cfg.announcements
+watched_channels = cfg.watched_channels
 
 intents = discord.Intents().all()
 client = commands.Bot(command_prefix='!', intents=intents)
@@ -49,7 +50,7 @@ async def members(ctx):
 
 @client.event
 async def on_voice_state_update(member, before, after):
-    if member.id in  watched_users and before.channel != after.channel: 
+    if member.id in watched_users and before.channel != after.channel and after.channel.id in watched_channels: 
         channel = after.channel
         if not channel:
             return
@@ -76,6 +77,7 @@ async def leave(ctx):
     voice_client = ctx.voice_client
     if voice_client and voice_client.is_connected():
         await voice_client.disconnect()
+    voice_client.stop()
 
 @client.command()
 async def speak(ctx, *, text):
