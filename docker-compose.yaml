@@ -1,0 +1,8 @@
+services:
+  myapp-dev:
+
+    image: "pidibot:latest"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - TOKEN=$TOKEN
