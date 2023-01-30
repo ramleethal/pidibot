@@ -4,6 +4,7 @@ import asyncio
 from gtts import gTTS
 import random
 import data.config as cfg
+from discord.ui import Button, View
 
 token = cfg.token
 allowed_users = cfg.allowed_users
@@ -149,5 +150,32 @@ async def ask(ctx, *, text):
     while voice_client.is_playing():
         await asyncio.sleep(1)
     voice_client.stop()
+
+@client.command()
+async def test(ctx):
+
+    async def button_callback(interaction):
+        await interaction.response.edit_message(content='Button clicked!', view=None)
+
+    button = Button(custom_id='button1', label='WOW button!', style=discord.ButtonStyle.green)
+    button.callback = button_callback
+
+    await ctx.send('Hello World!', view=View(button))
+
+class Menu(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.value = None
+    
+    @discord.ui.button(label = 'Send Message', style = discord.ButtonStyle.grey)
+    async def menu1(self, button: discord.ui.Button, interaction: discord.Interaction):
+        await interaction.author.send('Button clicked')
+
+@client.command()
+async def menu(ctx):
+    if ctx.author.id not in allowed_users:
+        return
+    view = Menu()
+    await ctx.reply(view = view)
 
 client.run(token)
