@@ -151,13 +151,22 @@ async def start_daily(ctx):
 async def on_reaction_add(reaction, user):
     if reaction.message.embeds and reaction.emoji == "▶" and user.id in allowed_users :
         channel = reaction.message.channel
-        await channel.send(content="start", tts=True)
+        #reaction.count = 1
+        await text_to_speech(user.guild.voice_client, 'test start', 'ru', 0.5)
+        #await channel.send(content="start", tts=True)
     elif reaction.message.embeds and reaction.emoji == "⏭" and user.id in allowed_users :
         channel = reaction.message.channel
-        await channel.send(content="next", tts=True)
+        #reaction.count = 1
+        await text_to_speech(user.guild.voice_client, 'test next', 'ru', 0.5)
+        #await channel.send(content="next", tts=True)
     elif reaction.message.embeds and reaction.emoji == "🔁" and user.id in allowed_users :
         channel = reaction.message.channel
-        await channel.send(content="repeat", tts=True)
+        #reaction.count = 1
+        await text_to_speech(user.guild.voice_client, 'test repeat', 'ru', 0.5)
+        #await channel.send(content="repeat", tts=True)
+    elif reaction.message.embeds and reaction.emoji in ['▶','⏭','🔁'] and user.id not in allowed_users :
+        #reaction.count = 1
+        pass;
 
 ###############################################################################
 @client.command()
