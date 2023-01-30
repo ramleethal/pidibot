@@ -1,6 +1,6 @@
 services:
-  myapp-dev:
-
+  pidibot-dev:
+    container_name: "pidibot_dev"
     image: "pidibot:latest"
     volumes:
       - ./data:/app/data

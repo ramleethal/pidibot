@@ -11,10 +11,9 @@ ENV TOKEN=TOKEN
 WORKDIR /app
 COPY requirements.txt /app/
 RUN pip install -r requirements.txt
-COPY bot.py /app/
-VOLUME /app/data
-COPY startup.sh /app/
 COPY config.py /app/
-RUN chmod +x /app/startup.sh
-RUN ls -A
+COPY bot.py /app/
+COPY startup.sh /app/
+VOLUME /app/data
+RUN chmod +x /app/startup.sh && apt update && apt upgrade && apt install -y ffmpeg
 CMD ["/bin/bash","-c","./startup.sh"]
