@@ -1,11 +1,11 @@
 import discord
-from discord.ext import commands
 import asyncio
-from gtts import gTTS
 import random
 import data.config as cfg
-from dotenv import load_dotenv
 import os
+from discord.ext import commands
+from gtts import gTTS
+from dotenv import load_dotenv
 #from discord.ui import Button, View
 
 load_dotenv()
@@ -80,7 +80,7 @@ async def on_voice_state_update(member, before, after):
                     await asyncio.sleep(0.1)
                 voice_client.stop()
                 #client.loop.create_task(keep_alive())
-        elif before.channel.id == watched_channels[0]: 
+        elif before.channel.id == watched_channels[0] and after.channel != before.channel: 
             text = random.choice(announcements[1])
             tts = gTTS(text, lang='ru')
             tts.save("tts.mp3")
@@ -169,6 +169,7 @@ async def test(ctx):
 
     await ctx.send('Hello World!', view=View(button))
 
+###############################################################################
 class Menu(discord.ui.View):
     def __init__(self):
         super().__init__()
@@ -185,6 +186,7 @@ async def menu(ctx):
     view = Menu()
     await ctx.reply(view = view)
 
+###############################################################################
 # Define a simple View that gives us a counter button
 class Counter(discord.ui.View):
 
@@ -207,5 +209,30 @@ class Counter(discord.ui.View):
 async def counter(ctx: commands.Context):
     """Starts a counter for pressing."""
     await ctx.send('Press!', view=Counter())
+
+###############################################################################
+@client.command()
+async def start_daily(ctx):
+    await join(ctx)
+    embed = discord.Embed(title="Планёрка", description="...")
+    embed.add_field(name="TTS", value="This is a TTS message", inline=False)
+    embed.set_footer(text="Click the button below to hear TTS text.")
+    msg = await ctx.send(embed=embed)
+    await msg.add_reaction("▶")
+    await msg.add_reaction("⏭")
+    await msg.add_reaction("🔁")
+    
+    
+@client.event
+async def on_reaction_add(reaction, user):
+    if reaction.message.embeds and reaction.emoji == "▶" and user.id in allowed_users :
+        channel = reaction.message.channel
+        await channel.send(content="start", tts=True)
+    elif reaction.message.embeds and reaction.emoji == "⏭" and user.id in allowed_users :
+        channel = reaction.message.channel
+        await channel.send(content="next", tts=True)
+    elif reaction.message.embeds and reaction.emoji == "🔁" and user.id in allowed_users :
+        channel = reaction.message.channel
+        await channel.send(content="repeat", tts=True)
 
 client.run(token)
