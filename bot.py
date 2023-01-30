@@ -119,14 +119,16 @@ async def speak(ctx, *, text):
         return
     else:
         if ctx.voice_client:
-            voice_client = await ctx.voice_client.move_to(channel)
+            #voice_client = await ctx.voice_client.move_to(channel)
+            await ctx.voice_client.disconnect()
+            voice_client = await channel.connect()
         else:
             voice_client = await channel.connect()
     tts = gTTS(text=text, lang='ru')
     tts.save("tts.mp3")
-    source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio("tts.mp3"))
-    source.volume = 0.5
-    voice_client.play(source)
+    voice = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio("tts.mp3"))
+    voice.volume = 0.5
+    voice_client.play(voice)
     while voice_client.is_playing():
         await asyncio.sleep(1)
     voice_client.stop()
@@ -141,7 +143,9 @@ async def ask(ctx, *, text):
         return
     else:
         if ctx.voice_client:
-            voice_client = await ctx.voice_client.move_to(channel)
+            #voice_client = await ctx.voice_client.move_to(channel)
+            await ctx.voice_client.disconnect()
+            voice_client = await channel.connect()
         else:
             voice_client = await channel.connect()
     #chatgpt request should be here
