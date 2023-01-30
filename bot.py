@@ -1,7 +1,7 @@
 import discord
 import asyncio
 import random
-import data.config as cfg
+import config as cfg
 import os
 from discord.ext import commands
 from gtts import gTTS
@@ -34,70 +34,41 @@ async def keep_alive():
     except:
         pass
 
+async def text_to_speech(voice_client, text, lang = 'ru', volume = 0.5):
+    if voice_client.is_playing():
+        voice_client.stop()
+    tts = gTTS(text, lang = lang)
+    tts.save("tts.mp3")
+    voice = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio("tts.mp3"))
+    voice.volume = volume
+    voice_client.play(voice)
+    while voice_client.is_playing():
+        await asyncio.sleep(0.1)
+    voice_client.stop()
+
+
 @client.command()
 async def join(ctx):
+    #check if user in whitelist
     if ctx.author.id not in allowed_users:
         return
-    channel = ctx.author.voice.channel
+    #check if user is connected to a voice channel. exit if not
+    try:
+        channel = ctx.author.voice.channel
+    except:
+        await ctx.send("You are not connected to a voice channel.")
+        return
+    #check for active voice client in context
     if ctx.voice_client is None:
-        client.voice_client = await channel.connect()
+        #if none => connect to channel
+        voice_client = await channel.connect()
+    #if there is an active voice client => disconnect, connect to new channel
     else:
-        await ctx.voice_client.move_to(channel)
+        #await ctx.voice_client.move_to(channel)
+        await ctx.voice_client.disconnect()
+        voice_client = await channel.connect()
+    return voice_client
     #client.loop.create_task(keep_alive())
-
-@client.command()
-async def members(ctx):
-    if ctx.author.id not in allowed_users:
-        return
-    channel = ctx.author.voice.channel
-    members = channel.members
-    for member in members:
-        print(member.name)
-
-@client.event
-async def on_voice_state_update(member, before, after):
-    if member.id in watched_users:
-        if before.channel != after.channel and after.channel is not None: 
-            if after.channel.id in watched_channels:
-                text = random.choice(announcements[0])
-                tts = gTTS(text, lang='ru')
-                tts.save("tts.mp3")
-                voice = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio("tts.mp3"))
-                voice.volume = 0.1
-                if not member.guild.voice_client:
-                    voice_client = await after.channel.connect()
-                elif member.guild.voice_client.channel.id != after.channel.id:
-                    await member.guild.voice_client.disconnect()
-                    #if voice_client.is_playing():
-                    #    voice_client.stop()
-                    #await voice_client.disconnect()
-                    voice_client = await after.channel.connect()
-                else: 
-                    voice_client = member.guild.voice_client
-                #if voice_client.is_connected():
-                voice_client.play(voice)
-                while voice_client.is_playing():
-                    await asyncio.sleep(0.1)
-                voice_client.stop()
-                #client.loop.create_task(keep_alive())
-        elif before.channel.id == watched_channels[0] and after.channel != before.channel: 
-            text = random.choice(announcements[1])
-            tts = gTTS(text, lang='ru')
-            tts.save("tts.mp3")
-            voice = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio("tts.mp3"))
-            voice.volume = 0.1
-            if not member.guild.voice_client:
-                voice_client = await before.channel.connect()
-            elif member.guild.voice_client.channel.id != before.channel.id:
-                await member.guild.voice_client.disconnect()
-                voice_client = await before.channel.connect()
-            else: 
-                voice_client = member.guild.voice_client
-            voice_client.play(voice)
-            while voice_client.is_playing():
-                await asyncio.sleep(0.1)
-            voice_client.stop()
-        #client.loop.create_task(keep_alive())
 
 @client.command()
 async def leave(ctx):
@@ -110,63 +81,91 @@ async def leave(ctx):
     voice_client.stop()
 
 @client.command()
-async def speak(ctx, *, text):
+async def members(ctx):
     if ctx.author.id not in allowed_users:
         return
     channel = ctx.author.voice.channel
-    if channel is None:
-        await ctx.send("You are not connected to a voice channel.")
+    members = channel.members
+    for member in members:
+        print(member.name)
+
+@client.event
+async def on_voice_state_update(member, before, after):
+    #check if user from watchlist updated it's status
+    if member.id in watched_users:
+        #user connected to another voice channel
+        if before.channel != after.channel and after.channel is not None: 
+            #user connected to one of watched channels
+            if after.channel.id in watched_channels:
+                if not member.guild.voice_client:
+                    voice_client = await after.channel.connect()
+                elif member.guild.voice_client.channel != after.channel:
+                    await member.guild.voice_client.disconnect()
+                    voice_client = await after.channel.connect()
+                else: 
+                    voice_client = member.guild.voice_client
+                text = random.choice(announcements[0])
+                await text_to_speech(voice_client, text, 'ru', 0.1)
+                #client.loop.create_task(keep_alive())
+        #watched user disconnected from one of watched channels
+        elif before.channel.id == watched_channels[0] and after.channel != before.channel: 
+            if not member.guild.voice_client:
+                voice_client = await before.channel.connect()
+            elif member.guild.voice_client.channel != before.channel:
+                await member.guild.voice_client.disconnect()
+                voice_client = await before.channel.connect()
+            else: 
+                voice_client = member.guild.voice_client
+            text = random.choice(announcements[1])
+            await text_to_speech(voice_client, text, 'ru', 0.1)
+            #client.loop.create_task(keep_alive())
+
+@client.command()
+async def speak(ctx, *, text):
+    if ctx.author.id not in allowed_users:
         return
-    else:
-        if ctx.voice_client:
-            #voice_client = await ctx.voice_client.move_to(channel)
-            await ctx.voice_client.disconnect()
-            voice_client = await channel.connect()
-        else:
-            voice_client = await channel.connect()
-    tts = gTTS(text=text, lang='ru')
-    tts.save("tts.mp3")
-    voice = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio("tts.mp3"))
-    voice.volume = 0.5
-    voice_client.play(voice)
-    while voice_client.is_playing():
-        await asyncio.sleep(1)
-    voice_client.stop()
+    voice_client = await join(ctx)
+    await text_to_speech(voice_client, text, 'ru', 0.5)
 
 @client.command()
 async def ask(ctx, *, text):
     if ctx.author.id not in allowed_users:
         return
-    channel = ctx.author.voice.channel
-    if channel is None:
-        await ctx.send("You are not connected to a voice channel.")
-        return
-    else:
-        if ctx.voice_client:
-            #voice_client = await ctx.voice_client.move_to(channel)
-            await ctx.voice_client.disconnect()
-            voice_client = await channel.connect()
-        else:
-            voice_client = await channel.connect()
-    #chatgpt request should be here
-    tts = gTTS(text=text, lang='ru')
-    tts.save("tts.mp3")
-    source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio("tts.mp3"))
-    source.volume = 0.5
-    voice_client.play(source)
-    while voice_client.is_playing():
-        await asyncio.sleep(1)
-    voice_client.stop()
+    voice_client = await join(ctx)
+    #chatgpt request goes here
+    await text_to_speech(voice_client, text, 'ru', 0.5)
 
+###############################################################################
+@client.command()
+async def start_daily(ctx):
+    await join(ctx)
+    embed = discord.Embed(title="Планёрка", description="...")
+    embed.add_field(name="TTS", value="This is a TTS message", inline=False)
+    embed.set_footer(text="Click the button below to hear TTS text.")
+    msg = await ctx.send(embed=embed)
+    await msg.add_reaction("▶")
+    await msg.add_reaction("⏭")
+    await msg.add_reaction("🔁")
+
+@client.event
+async def on_reaction_add(reaction, user):
+    if reaction.message.embeds and reaction.emoji == "▶" and user.id in allowed_users :
+        channel = reaction.message.channel
+        await channel.send(content="start", tts=True)
+    elif reaction.message.embeds and reaction.emoji == "⏭" and user.id in allowed_users :
+        channel = reaction.message.channel
+        await channel.send(content="next", tts=True)
+    elif reaction.message.embeds and reaction.emoji == "🔁" and user.id in allowed_users :
+        channel = reaction.message.channel
+        await channel.send(content="repeat", tts=True)
+
+###############################################################################
 @client.command()
 async def test(ctx):
-
     async def button_callback(interaction):
         await interaction.response.edit_message(content='Button clicked!', view=None)
-
     button = Button(custom_id='button1', label='WOW button!', style=discord.ButtonStyle.green)
     button.callback = button_callback
-
     await ctx.send('Hello World!', view=View(button))
 
 ###############################################################################
@@ -209,30 +208,5 @@ class Counter(discord.ui.View):
 async def counter(ctx: commands.Context):
     """Starts a counter for pressing."""
     await ctx.send('Press!', view=Counter())
-
-###############################################################################
-@client.command()
-async def start_daily(ctx):
-    await join(ctx)
-    embed = discord.Embed(title="Планёрка", description="...")
-    embed.add_field(name="TTS", value="This is a TTS message", inline=False)
-    embed.set_footer(text="Click the button below to hear TTS text.")
-    msg = await ctx.send(embed=embed)
-    await msg.add_reaction("▶")
-    await msg.add_reaction("⏭")
-    await msg.add_reaction("🔁")
-    
-    
-@client.event
-async def on_reaction_add(reaction, user):
-    if reaction.message.embeds and reaction.emoji == "▶" and user.id in allowed_users :
-        channel = reaction.message.channel
-        await channel.send(content="start", tts=True)
-    elif reaction.message.embeds and reaction.emoji == "⏭" and user.id in allowed_users :
-        channel = reaction.message.channel
-        await channel.send(content="next", tts=True)
-    elif reaction.message.embeds and reaction.emoji == "🔁" and user.id in allowed_users :
-        channel = reaction.message.channel
-        await channel.send(content="repeat", tts=True)
 
 client.run(token)
