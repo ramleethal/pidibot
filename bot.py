@@ -19,12 +19,13 @@ async def on_ready():
     print(f'{client.user} has connected to Discord!')
     # Start the keep-alive task
     #add to every funcion that connects to VC
-    client.loop.create_task(keep_alive())
+    #client.loop.create_task(keep_alive())
 
 async def keep_alive():
     try:
         while True:
             await client.change_presence(status=discord.Status.online)
+            print('keep_alive 30')
             await asyncio.sleep(30)
     except:
         pass
@@ -38,6 +39,7 @@ async def join(ctx):
         client.voice_client = await channel.connect()
     else:
         await ctx.voice_client.move_to(channel)
+    #client.loop.create_task(keep_alive())
 
 @client.command()
 async def members(ctx):
@@ -50,24 +52,29 @@ async def members(ctx):
 
 @client.event
 async def on_voice_state_update(member, before, after):
-    if member.id in watched_users and before.channel != after.channel and after.channel.id in watched_channels: 
-        channel = after.channel
-        if not channel:
-            return
-        text = random.choice(announcements[1])
-        tts = gTTS(text, lang='ru')
-        tts.save("tts.mp3")
-        voice = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio("tts.mp3"))
-        voice.volume = 0.5
-        #channel = member.guild.get_channel(after.channel.id)
-        #voice_client = await channel.connect()
-        if not member.guild.voice_client:
-            voice_client = await channel.connect()
-        voice_client.play(voice)
-        while voice_client.is_playing():
-            await asyncio.sleep(1)
-        await voice_client.disconnect()
-        voice_client.stop()
+    if member.id in watched_users:
+        if before.channel != after.channel and after.channel is not None: 
+            if after.channel.id in watched_channels:
+                text = random.choice(announcements[0])
+                tts = gTTS(text, lang='ru')
+                tts.save("tts.mp3")
+                voice = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio("tts.mp3"))
+                voice.volume = 0.1
+                if not member.guild.voice_client:
+                    voice_client = await after.channel.connect()
+                elif member.guild.voice_client.channel.id != after.channel.id:
+                    voice_client = member.guild.voice_client
+                    if voice_client.is_playing():
+                        voice_client.stop()
+                    #await voice_client.disconnect()
+                    #voice_client = await after.channel.connect()
+                    await voice_client.move_to(after.channel)
+                if voice_client.is_connected():
+                    voice_client.play(voice)
+                while voice_client.is_playing():
+                    await asyncio.sleep(0.1)
+                voice_client.stop()
+                #client.loop.create_task(keep_alive())
 
 @client.command()
 async def leave(ctx):

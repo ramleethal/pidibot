@@ -1,4 +1,3 @@
 discord.py==2.1.0
 gTTS==2.3.1
-asyncio
-random
+PyNaCl==1.5.0
