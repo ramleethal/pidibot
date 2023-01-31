@@ -136,6 +136,60 @@ async def ask(ctx, *, text):
     await text_to_speech(voice_client, text, 'ru', 0.5)
 
 ###############################################################################
+class Menu(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.value = None
+    
+    @discord.ui.button(label = 'Send Message', style = discord.ButtonStyle.grey)
+    async def menu1(self, interaction: discord.Interaction, button: discord.ui.Button):
+        button.label = 'Message sent!'
+        button.disabled = True
+        await interaction.channel.send('This is the message text')
+        await interaction.response.edit_message(view = self)
+
+    @discord.ui.button(label = 'Throw a dice', style = discord.ButtonStyle.grey)
+    async def menu2(self, interaction: discord.Interaction, button: discord.ui.Button):
+        button.label = 'check the result'
+        button.disabled = True
+        await interaction.channel.send('Throw result: '+ str(random.randint(1, 6)))
+        await interaction.response.edit_message(view = self)
+    
+
+@client.command()
+async def menu(ctx):
+    if ctx.author.id not in allowed_users:
+        return
+    view = Menu()
+    await ctx.reply(view = view)
+
+###############################################################################
+# Define a simple View that gives us a counter button
+class Counter(discord.ui.View):
+
+    # Define the actual button
+    # When pressed, this increments the number displayed until it hits 5.
+    # When it hits 5, the counter button is disabled and it turns green.
+    # note: The name of the function does not matter to the library
+    @discord.ui.button(label='0', style=discord.ButtonStyle.red)
+    async def count(self, interaction: discord.Interaction, button: discord.ui.Button):
+        number = int(button.label) if button.label else 0
+        if number + 1 >= 5:
+            button.style = discord.ButtonStyle.green
+            button.disabled = True
+        button.label = str(number + 1)
+
+        # Make sure to update the message with our updated selves
+        await interaction.response.edit_message(view=self)
+
+@client.command()
+async def counter(ctx: commands.Context):
+    """Starts a counter for pressing."""
+    await ctx.send('Press!', view=Counter())
+
+client.run(token)
+
+###############################################################################
 @client.command()
 async def start_daily(ctx):
     await join(ctx)
@@ -166,56 +220,14 @@ async def on_reaction_add(reaction, user):
         #await channel.send(content="repeat", tts=True)
     elif reaction.message.embeds and reaction.emoji in ['▶','⏭','🔁'] and user.id not in allowed_users :
         #reaction.count = 1
-        pass;
+        pass
 
 ###############################################################################
 @client.command()
 async def test(ctx):
     async def button_callback(interaction):
         await interaction.response.edit_message(content='Button clicked!', view=None)
-    button = Button(custom_id='button1', label='WOW button!', style=discord.ButtonStyle.green)
+    button = discord.ui.button(custom_id='button1', label='WOW button!', style=discord.ButtonStyle.green)
     button.callback = button_callback
-    await ctx.send('Hello World!', view=View(button))
+    await ctx.send('Hello World!', view=discord.ui.View(button))
 
-###############################################################################
-class Menu(discord.ui.View):
-    def __init__(self):
-        super().__init__()
-        self.value = None
-    
-    @discord.ui.button(label = 'Send Message', style = discord.ButtonStyle.grey)
-    async def menu1(self, button: discord.ui.Button, interaction: discord.Interaction):
-        await interaction.author.send('Button clicked')
-
-@client.command()
-async def menu(ctx):
-    if ctx.author.id not in allowed_users:
-        return
-    view = Menu()
-    await ctx.reply(view = view)
-
-###############################################################################
-# Define a simple View that gives us a counter button
-class Counter(discord.ui.View):
-
-    # Define the actual button
-    # When pressed, this increments the number displayed until it hits 5.
-    # When it hits 5, the counter button is disabled and it turns green.
-    # note: The name of the function does not matter to the library
-    @discord.ui.button(label='0', style=discord.ButtonStyle.red)
-    async def count(self, button: discord.ui.Button, interaction: discord.Interaction):
-        number = int(button.label) if button.label else 0
-        if number + 1 >= 5:
-            button.style = discord.ButtonStyle.green
-            button.disabled = True
-        button.label = str(number + 1)
-
-        # Make sure to update the message with our updated selves
-        await interaction.response.edit_message(view=self)
-
-@client.command()
-async def counter(ctx: commands.Context):
-    """Starts a counter for pressing."""
-    await ctx.send('Press!', view=Counter())
-
-client.run(token)
