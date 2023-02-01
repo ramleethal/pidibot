@@ -132,7 +132,7 @@ async def on_voice_state_update(member, before, after):
             text = random.choice(announcements[1])
         else:
             text = random.choice(announcements[1])
-        await text_to_speech(voice_client, text, 'ru', 1)#0.1)
+        await text_to_speech(voice_client, text, 'ru', 0.05)
         #client.loop.create_task(keep_alive())
     #watched user disconnected from one of watched channels
     elif after.channel != before.channel and before.channel is not None: 
@@ -146,7 +146,7 @@ async def on_voice_state_update(member, before, after):
                 else: 
                     voice_client = member.guild.voice_client
                 text = random.choice(announcements[2])
-                await text_to_speech(voice_client, text, 'ru', 1)#0.1)
+                await text_to_speech(voice_client, text, 'ru', 0.05)
                 #client.loop.create_task(keep_alive())
 ###############################################################
 
