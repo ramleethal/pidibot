@@ -121,6 +121,11 @@ async def on_voice_state_update(member, before, after):
     #user connected to another voice channel
     if before.channel != after.channel and after.channel is not None and after.channel.id in watched_channels: 
         #user connected to one of watched channels
+        if member.id in watched_users:
+            if after.channel.id == watched_channels[0]: user = client.get_user(allowed_users[0])
+            elif after.channel.id ==watched_channels[1]: user = client.get_user(allowed_users[1])
+            await user.send(random.choice[':):',':(:'])
+            return
         if not member.guild.voice_client:
             voice_client = await after.channel.connect()
         elif member.guild.voice_client.channel != after.channel:
@@ -128,10 +133,7 @@ async def on_voice_state_update(member, before, after):
             voice_client = await after.channel.connect()
         else: 
             voice_client = member.guild.voice_client
-        if member.id in watched_users:
-            text = random.choice(announcements[1])
-        else:
-            text = random.choice(announcements[1])
+        text = random.choice(announcements[1])
         await text_to_speech(voice_client, text, 'ru', 0.05)
         #client.loop.create_task(keep_alive())
     #watched user disconnected from one of watched channels
