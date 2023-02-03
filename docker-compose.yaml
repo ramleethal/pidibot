@@ -4,5 +4,6 @@ services:
     image: "pidibot:latest"
     volumes:
       - ./data:/app/data
+      - ./pidibot-sheets.json:/app/pidibot-sheets.json
     environment:
       - TOKEN=$TOKEN

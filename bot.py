@@ -124,7 +124,7 @@ async def on_voice_state_update(member, before, after):
         if member.id in watched_users:
             if after.channel.id == watched_channels[0]: user = client.get_user(allowed_users[0])
             elif after.channel.id ==watched_channels[1]: user = client.get_user(allowed_users[1])
-            await user.send(random.choice[':):',':(:'])
+            await user.send(random.choice([':):',':(:']))
             return
         if not member.guild.voice_client:
             voice_client = await after.channel.connect()
